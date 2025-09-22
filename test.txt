@@ -1,0 +1,79 @@
+"C:\Users\mvanu\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe"
+
+
+
+import time
+import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+
+# ==== CONFIGURATION ====
+search_query = "laptop"
+chromedriver_path = r"C:\Users\mvanu\Downloads\chromedriver-win64\chromedriver-win64\chromedriver.exe"
+
+# ==== SETUP CHROME DRIVER ====
+chrome_options = Options()
+chrome_options.add_argument("--start-maximized")
+chrome_service = Service(chromedriver_path)
+driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+
+# ==== SCRAPING ====
+driver.get("https://www.amazon.in/")
+
+# Search for the query
+search_box = driver.find_element(By.ID, "twotabsearchtextbox")
+search_box.send_keys(search_query)
+search_box.send_keys(Keys.RETURN)
+time.sleep(3)
+
+products = []
+prices = []
+links = []
+
+# Scrape first page
+items = driver.find_elements(By.XPATH, "//div[@data-component-type='s-search-result']")
+for item in items:
+    try:
+        link = item.find_element(By.TAG_NAME, "a").get_attribute("href")
+        links.append(link)
+    except:
+        continue
+
+# Now visit each product page to get full name
+for link in links:
+    try:
+        driver.get(link)
+        time.sleep(2)
+        
+        try:
+            name = driver.find_element(By.ID, "productTitle").text.strip()
+        except:
+            name = None
+        
+        try:
+            price = driver.find_element(By.CLASS_NAME, "a-price-whole").text.strip()
+        except:
+            price = None
+        
+        products.append(name)
+        prices.append(price)
+    
+    except Exception as e:
+        print(f"Error scraping {link}: {e}")
+        products.append(None)
+        prices.append(None)
+
+driver.quit()
+
+# ==== SAVE TO CSV ====
+df = pd.DataFrame({
+    "Product": products,
+    "Price": prices,
+    "Link": links
+})
+
+df.to_csv("amazon_laptops.csv", index=False, encoding="utf-8-sig")
+print("✅ Scraping complete! Saved to amazon_laptops.csv")
