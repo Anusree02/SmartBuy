@@ -103,11 +103,13 @@ class FlipkartScraper:
         raw_data_dir = os.path.join(os.path.dirname(__file__), "..", "data", "raw")
         os.makedirs(raw_data_dir, exist_ok=True)
 
-        file_name = f"flipkart_{self.category}_{self.search_query}.csv".replace(" ", "_")
+        # Keep spaces in query
+        file_name = f"flipkart_{self.category}_{self.search_query}.csv"
         output_file = os.path.join(raw_data_dir, file_name)
 
         df.to_csv(output_file, index=False, encoding="utf-8-sig")
         print(f"✅ Data saved to {output_file}")
+
 
     def tearDown(self):
         self.driver.quit()
